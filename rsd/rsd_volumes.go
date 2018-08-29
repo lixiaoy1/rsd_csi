@@ -3,8 +3,9 @@ package rsd
 import (
 	"fmt"
     "strings"
+    "io/ioutil"
 //    "net/http"
-//    "encoding/json"
+    "encoding/json"
 //	"time"
 //    "log"
 )
@@ -45,3 +46,44 @@ func (client *ServiceClient) CreateVolume(name string, size int64) (string, erro
     return "", err
 }
 
+func (client *ServiceClient) GetVolume(volume_id string) (string, error) {
+    url := getURL(client, volume_id)
+    resp, err := client.ProviderClient.Get(url, nil, &RequestOpts{
+        OkCodes: []int{200},
+    })
+    body, err := ioutil.ReadAll(resp.Body)
+    var dat map[string]interface{}
+
+    json.Unmarshal(body, &dat)
+    
+    for key, value := range dat {
+        fmt.Printf("%s=\"%s\"\n", key, value)
+    }
+
+    // Do update
+    return "dad", err
+}
+
+func (client *ServiceClient) ListVolume() {
+}
+
+func (client *ServiceClient) AttachVolume(node_uri string, volume_id string) (error) {
+    reqBody := make(map[string]interface{})
+    resource := make(map[string]interface{})
+    resource["@odata.id"] = "/redfish/v1/StorageServices/1-sv-1/Volumes/" + volume_id
+    reqBody["Resource"] = resource
+    resp, err := client.ProviderClient.Post(node_uri, reqBody, nil, &RequestOpts{
+        OkCodes: []int{201},
+    })
+
+    var dat map[string]interface{}
+
+    body, err := ioutil.ReadAll(resp.Body)
+    json.Unmarshal(body, &dat)
+
+    for key, value := range dat {
+        fmt.Printf("%s=\"%s\"\n", key, value)
+    }
+
+    return err
+}
