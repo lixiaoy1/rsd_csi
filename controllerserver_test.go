@@ -29,3 +29,14 @@ func TestCreateVolume(t *testing.T) {
     fmt.Printf("%q", actualRes)
 }
 
+func TestDeleteVolume(t *testing.T) {
+    fakeReq := &csi.DeleteVolumeRequest{
+		VolumeId: "5-sv-1-vl-8",
+	}
+    fakeCtx := context.Background()
+    actualRes, err := fakeCs.DeleteVolume(fakeCtx, fakeReq)
+    if err != nil {
+        t.Errorf("failed to Delete: %v", err)
+    }
+    fmt.Printf("%q", actualRes)
+}

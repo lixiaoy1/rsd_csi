@@ -151,8 +151,12 @@ func (client *ProviderClient) Request(method, url string, options RequestOpts) (
 
 	// Construct the http.Request.
 	req, err := http.NewRequest(method, url, body)
-    req.SetBasicAuth(client.User, client.Password)
+	if req == nil {
+		fmt.Printf("req.SetBasicAuth %s:%s, req:%v, err:%d.\n", client.User, client.Password, req, err)
+		return nil, err
+	}
 
+	req.SetBasicAuth(client.User, client.Password)
 	if err != nil {
 		return nil, err
 	}

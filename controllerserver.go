@@ -75,7 +75,27 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 }
 
 func (cs *controllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
-    return nil, nil
+	glog.V(1).Infof("Start DeleteVolume")
+	if err := cs.Driver.ValidateControllerServiceRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME); err != nil {
+		glog.V(3).Infof("invalid delete volume req: %v", req)
+		return nil, err
+	}
+
+	rsdClient, err := GetRSDProvider()
+    if err != nil {
+        glog.V(3).Infof("Failed to GetRSDProvider: %v", err)
+        return nil, err
+	}
+
+	volumeID := req.VolumeId
+    err = rsdClient.DeleteVolume(volumeID)
+    if err != nil {
+        glog.V(3).Infof("Failed to DeleteVolume: %v", err)
+        return nil, err
+	}
+
+	glog.V(4).Infof("delete volume %s", volumeID)
+	return &csi.DeleteVolumeResponse{}, nil
 }
 
 func (cs *controllerServer) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {

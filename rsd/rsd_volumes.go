@@ -70,7 +70,7 @@ func (client *ServiceClient) ListVolume() {
 func (client *ServiceClient) AttachVolume(node_uri string, volume_id string) (error) {
     reqBody := make(map[string]interface{})
     resource := make(map[string]interface{})
-    resource["@odata.id"] = "/redfish/v1/StorageServices/1-sv-1/Volumes/" + volume_id
+    resource["@odata.id"] = "/redfish/v1/StorageServices/5-sv-1/Volumes/" + volume_id
     reqBody["Resource"] = resource
     resp, err := client.ProviderClient.Post(node_uri, reqBody, nil, &RequestOpts{
         OkCodes: []int{201},
@@ -85,5 +85,18 @@ func (client *ServiceClient) AttachVolume(node_uri string, volume_id string) (er
         fmt.Printf("%s=\"%s\"\n", key, value)
     }
 
+    return err
+}
+
+func (client *ServiceClient) DeleteVolume(volume_id string) (error) {
+
+    url := getURL(client, volume_id)
+
+    resp, err := client.ProviderClient.Delete(url, &RequestOpts{
+        OkCodes: []int{204, 202},
+    })
+
+    fmt.Printf("%q", resp)
+    // nil if delete OK
     return err
 }
