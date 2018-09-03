@@ -115,7 +115,8 @@ func (client *ServiceClient) CreateVolume(name string, size int64) (string, erro
     fmt.Printf("%q", resp)
     if err == nil {
         volume_url := strings.Join(resp.Header["Location"]," ")
-        return volume_url, nil
+        vols := strings.Split(volume_url, "/")
+        return vols[len(vols)-1], nil
     }
     return "", err
 }
