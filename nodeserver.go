@@ -17,7 +17,7 @@ limitations under the License.
 package rsd_csi
 
 import (
-//	"os"
+	"os"
     "fmt"
     "strings"
 
@@ -25,11 +25,11 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/container-storage-interface/spec/lib/go/csi/v0"
-//	"google.golang.org/grpc/codes"
-//	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/kubernetes-csi/drivers/pkg/csi-common"
-//    "k8s.io/kubernetes/pkg/util/mount"
+    "k8s.io/kubernetes/pkg/util/mount"
 )
 
 type nodeServer struct {
@@ -45,13 +45,12 @@ func (ns *nodeServer) NodeGetId(ctx context.Context, req *csi.NodeGetIdRequest) 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	targetPath := req.GetTargetPath()
 
-	if !strings.HasSuffix(targetPath, "/mount") {
+	if !strings.HasPrefix(targetPath, "/mnt") {
 		return nil, fmt.Errorf("rsd: malformed the value of target path: %s", targetPath)
 	}
 	s := strings.Split(strings.TrimSuffix(targetPath, "/mount"), "/")
 	volName := s[len(s)-1]
 
-    /*
 	notMnt, err := mount.New("").IsLikelyNotMountPoint(targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -67,20 +66,27 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	if !notMnt {
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
-    */
 
     // Start to attach
     rsdClient, err := GetRSDProvider()
     if err != nil {
-        //glog.V(3).Infof("Failed to GetRSDProvider: %v", err)
+        glog.V(3).Infof("Failed to GetRSDProvider: %v", err)
         return nil, err
     }
 
     // Attach in storage
-    initiator, target, target_ip, err := rsdClient.AttachVolume("https://podm-otc.jf.intel.com:8443/redfish/v1/Nodes/1/Actions/ComposedNode.AttachResource", volName)
+    initiator, target, target_ip, err := rsdClient.AttachVolume("1", volName)
+    if err != nil {
+        glog.V(3).Infof("Failed to attach: %v", err)
+        return nil, err
+    }
 
     // nvme connect
     devicePath, err := connectRSDVolume(initiator, target, target_ip)
+    if err != nil {
+        glog.V(3).Infof("Failed to find the device: %v", err)
+        return nil, err
+    }
     glog.V(4).Infof("path %v\n", devicePath)
 
     // Mount
@@ -97,12 +103,10 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		options = append(options, "ro")
 	}
 
-    /*
     diskMounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: mount.NewOsExec()}
 	if err := diskMounter.FormatAndMount(devicePath, targetPath, fsType, options); err != nil {
 		return nil, err
 	}
-    */
     return &csi.NodePublishVolumeResponse{}, nil
 }
 
