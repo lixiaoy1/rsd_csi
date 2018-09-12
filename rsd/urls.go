@@ -36,3 +36,8 @@ func getNodeURL(c *ServiceClient, id string) string {
 func getNodeAttachURL(c *ServiceClient, id string) string {
     return c.ServiceURL("/redfish/v1/Nodes", id, "Actions/ComposedNode.AttachResource")
 }
+
+func getNodeDetachURL(c *ServiceClient, id string) string {
+    return c.ServiceURL("/redfish/v1/Nodes", id, "Actions/ComposedNode.DetachResource")
+}
+

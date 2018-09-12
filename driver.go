@@ -72,7 +72,14 @@ func NewNodeServer(d *driver) *nodeServer {
 }
 
 func (d *driver) Run() {
-	glog.Infof("Driver: %v ", driverName)
+	//glog.Infof("Driver: %v ", driverName)
 //    csicommon.RunControllerandNodePublishServer(d.endpoint, d.csiDriver, NewControllerServer(d), NewNodeServer(d))
+        s := csicommon.NewNonBlockingGRPCServer()
+        s.Start(d.endpoint,
+                NewIdentityServer(d),
+                NewControllerServer(d),
+                NewNodeServer(d))
+        s.Wait()
 }
+
 

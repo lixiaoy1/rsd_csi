@@ -111,8 +111,35 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 }
 
 func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+	targetPath := req.GetTargetPath()
 
-	return &csi.NodeUnpublishVolumeResponse{}, nil
+	if !strings.HasPrefix(targetPath, "/mnt") {
+		return nil, fmt.Errorf("rsd: malformed the value of target path: %s", targetPath)
+	}
+	s := strings.Split(strings.TrimSuffix(targetPath, "/mount"), "/")
+	volName := s[len(s)-1]
+
+    glog.V(4).Infof("unmount targetPath %v\n", targetPath)
+    err := mount.New("").Unmount(req.GetTargetPath())
+    if err != nil {
+        return nil, err
+    }
+
+    // Start to detach
+    rsdClient, err := GetRSDProvider()
+    if err != nil {
+        glog.V(3).Infof("Failed to GetRSDProvider: %v", err)
+        return nil, err
+    }
+
+    // Detach in storage
+    err = rsdClient.DetachVolume("1", volName)
+    if err != nil {
+        glog.V(3).Infof("Failed to detach: %v", err)
+        return nil, err
+    }
+
+    return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {

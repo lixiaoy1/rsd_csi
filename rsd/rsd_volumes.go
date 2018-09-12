@@ -121,6 +121,20 @@ func (client *ServiceClient) CreateVolume(name string, size int64) (string, erro
     return "", err
 }
 
+func (client *ServiceClient) DeleteVolume(volume_id string) (error) {
+
+    url := getURL(client, volume_id)
+
+    resp, err := client.ProviderClient.Delete(url, &RequestOpts{
+        OkCodes: []int{204, 202},
+    })
+
+    fmt.Printf("%q", resp)
+
+    // nil if delete OK
+    return err
+}
+
 func (client *ServiceClient) GetVolume(volume_id string) (*Volume, error) {
     url := getURL(client, volume_id)
     resp, err := client.ProviderClient.Get(url, nil, &RequestOpts{
@@ -289,15 +303,19 @@ func (client *ServiceClient) AttachVolume(node_id string, volume_id string) (str
     return node_nqn, target_nqn, target_ip, nil
 }
 
-func (client *ServiceClient) DeleteVolume(volume_id string) (error) {
-
-    url := getURL(client, volume_id)
-
-    resp, err := client.ProviderClient.Delete(url, &RequestOpts{
-        OkCodes: []int{204, 202},
+func (client *ServiceClient) DetachVolume(node_id string, volume_id string) (error) {
+    reqBody := make(map[string]interface{})
+    resource := make(map[string]interface{})
+    resource["@odata.id"] = "/redfish/v1/StorageServices/5-sv-1/Volumes/" + volume_id
+    reqBody["Resource"] = resource
+    node_attach_url := getNodeDetachURL(client, node_id)
+    _, err := client.ProviderClient.Post(node_attach_url, reqBody, nil, &RequestOpts{
+        OkCodes: []int{204},
     })
+    if err != nil {
+        return err
+    }
 
-    fmt.Printf("%q", resp)
-    // nil if delete OK
-    return err
+    return nil
 }
+
