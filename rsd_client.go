@@ -1,7 +1,7 @@
 package rsd_csi
 
 import (
-    "github.com/rsd_csi/rsd"
+    "github.com/kubernetes-csi/drivers/pkg/rsd_csi/rsd"
 
 )
 
@@ -24,7 +24,7 @@ func GetRSDProvider() (*rsd.ServiceClient, error) {
 
 func NewClient(endpoint string) (*rsd.ProviderClient, error) {
     p := new(rsd.ProviderClient)
-    p.IdentityBase = "https://x.x.x.x:8443"
+    p.IdentityBase = "https://podm-rack1up.sh.intel.com:8443"
     p.IdentityEndpoint = endpoint
     p.User = "admin"
     p.Password = "admin"

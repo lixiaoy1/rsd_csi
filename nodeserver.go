@@ -75,7 +75,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
     }
 
     // Attach in storage
-    initiator, target, target_ip, err := rsdClient.AttachVolume("1", volName)
+    initiator, target, target_ip, err := rsdClient.AttachVolume("2", volName)
     if err != nil {
         glog.V(3).Infof("Failed to attach: %v", err)
         return nil, err
@@ -90,6 +90,8 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
     glog.V(4).Infof("path %v\n", devicePath)
 
     // Mount
+    //devicePath := "/dev/nvme4n1"
+
     fsType := req.GetVolumeCapability().GetMount().GetFsType()
 	readOnly := req.GetReadonly()
 	attrib := req.GetVolumeAttributes()

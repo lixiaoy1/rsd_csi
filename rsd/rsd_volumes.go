@@ -277,7 +277,7 @@ func (client *ServiceClient) GetNodeNQN(node_id string) (string, error) {
 func (client *ServiceClient) AttachVolume(node_id string, volume_id string) (string, string, string, error) {
     reqBody := make(map[string]interface{})
     resource := make(map[string]interface{})
-    resource["@odata.id"] = "/redfish/v1/StorageServices/5-sv-1/Volumes/" + volume_id
+    resource["@odata.id"] = "/redfish/v1/StorageServices/6-sv-1/Volumes/" + volume_id
     reqBody["Resource"] = resource
     node_attach_url := getNodeAttachURL(client, node_id)
     _, err := client.ProviderClient.Post(node_attach_url, reqBody, nil, &RequestOpts{
@@ -306,7 +306,7 @@ func (client *ServiceClient) AttachVolume(node_id string, volume_id string) (str
 func (client *ServiceClient) DetachVolume(node_id string, volume_id string) (error) {
     reqBody := make(map[string]interface{})
     resource := make(map[string]interface{})
-    resource["@odata.id"] = "/redfish/v1/StorageServices/5-sv-1/Volumes/" + volume_id
+    resource["@odata.id"] = "/redfish/v1/StorageServices/6-sv-1/Volumes/" + volume_id
     reqBody["Resource"] = resource
     node_attach_url := getNodeDetachURL(client, node_id)
     _, err := client.ProviderClient.Post(node_attach_url, reqBody, nil, &RequestOpts{
