@@ -17,16 +17,17 @@ limitations under the License.
 package rsd_csi
 
 import (
-	"os"
+    "os"
     "fmt"
     "strings"
+    "time"
 
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 
 	"github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+        "google.golang.org/grpc/status"
 
 	"github.com/kubernetes-csi/drivers/pkg/csi-common"
     "k8s.io/kubernetes/pkg/util/mount"
@@ -75,23 +76,28 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
     }
 
     // Attach in storage
-    initiator, target, target_ip, err := rsdClient.AttachVolume("2", volName)
+    initiator, target, target_ip, err := rsdClient.AttachVolume("3", volName)
     if err != nil {
         glog.V(3).Infof("Failed to attach: %v", err)
         return nil, err
     }
 
     // nvme connect
-    devicePath, err := connectRSDVolume(initiator, target, target_ip)
+    err = connectRSDVolume(initiator, target, target_ip)
     if err != nil {
         glog.V(3).Infof("Failed to find the device: %v", err)
         return nil, err
     }
-    glog.V(4).Infof("path %v\n", devicePath)
+
+    time.Sleep(5 * time.Second)
+    devicePath := getDevicePath(target)
+    if devicePath == "" {
+        glog.V(3).Infof("Failed to getDevicePath")
+        return nil, err
+    }
+    glog.V(4).Infof("devicePath: %v\n", devicePath)
 
     // Mount
-    //devicePath := "/dev/nvme4n1"
-
     fsType := req.GetVolumeCapability().GetMount().GetFsType()
 	readOnly := req.GetReadonly()
 	attrib := req.GetVolumeAttributes()
@@ -135,7 +141,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
     }
 
     // Detach in storage
-    err = rsdClient.DetachVolume("1", volName)
+    err = rsdClient.DetachVolume("3", volName)
     if err != nil {
         glog.V(3).Infof("Failed to detach: %v", err)
         return nil, err
