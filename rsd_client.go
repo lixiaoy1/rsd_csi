@@ -25,7 +25,7 @@ func GetRSDProvider() (*rsd.ServiceClient, error) {
 func NewClient(endpoint string) (*rsd.ProviderClient, error) {
     p := new(rsd.ProviderClient)
     //p.IdentityBase = "https://podm-rack1up.sh.intel.com:8443"
-    p.IdentityBase = "https://10.239.43.130:8443"
+    p.IdentityBase = "https://10.239.43.126:8443"
     p.IdentityEndpoint = endpoint
     p.User = "admin"
     p.Password = "admin"

@@ -21,6 +21,7 @@ func connectRSDVolume(initiator string, target string, target_ip string) (error)
 }
 
 func getDevicePath(target string) (string){
+    glog.Infof("getDevicePath from target: %s.", target)
     cmd := exec.Command("nvme", "list")
     out, err := cmd.CombinedOutput()
     if err != nil {

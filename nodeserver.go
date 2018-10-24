@@ -40,18 +40,25 @@ type nodeServer struct {
 }
 
 func (ns *nodeServer) NodeGetId(ctx context.Context, req *csi.NodeGetIdRequest) (*csi.NodeGetIdResponse, error) {
+    glog.Infof("NodeGetId enter\n [Context]: %v,\n [Request]: %v.\n", ctx, *req)
     return ns.DefaultNodeServer.NodeGetId(ctx, req)
 }
 
-func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
-	targetPath := req.GetTargetPath()
+func (ns *nodeServer) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
+    glog.Infof("NodeGetInfo enter\n [Context]: %v,\n [Request]: %v.\n", ctx, *req)
+    return ns.DefaultNodeServer.NodeGetInfo(ctx, req)
+}
 
-	if !strings.HasPrefix(targetPath, "/mnt") {
+func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+	glog.Infof("NodePublishVolume enter\n [Context]: %v,\n [Request]: %v.\n", ctx, *req)
+	targetPath := req.GetTargetPath()
+	volName := req.GetVolumeId()
+
+	/*if !strings.HasPrefix(targetPath, "/mnt") {
 		return nil, fmt.Errorf("rsd: malformed the value of target path: %s", targetPath)
 	}
 	s := strings.Split(strings.TrimSuffix(targetPath, "/mount"), "/")
-	volName := s[len(s)-1]
-
+	volName := s[len(s)-1]*/
 	notMnt, err := mount.New("").IsLikelyNotMountPoint(targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -85,19 +92,20 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
     // nvme connect
     err = connectRSDVolume(initiator, target, target_ip)
     if err != nil {
-        glog.V(3).Infof("Failed to find the device: %v", err)
+        glog.Errorf("Failed to find the device: %v", err)
         return nil, err
     }
 
-    time.Sleep(5 * time.Second)
+    time.Sleep(3 * time.Second)
     devicePath := getDevicePath(target)
     if devicePath == "" {
-        glog.V(3).Infof("Failed to getDevicePath")
+        glog.Errorf("Failed to getDevicePath")
         return nil, err
     }
-    glog.V(4).Infof("devicePath: %v\n", devicePath)
+    glog.Errorf("Success to get devicePath: %v\n", devicePath)
 
     // Mount
+    //devicePath := req.GetPublishInfo()["DevicePath"]
     fsType := req.GetVolumeCapability().GetMount().GetFsType()
 	readOnly := req.GetReadonly()
 	attrib := req.GetVolumeAttributes()

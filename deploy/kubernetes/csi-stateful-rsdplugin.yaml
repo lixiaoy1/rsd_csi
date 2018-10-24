@@ -1,0 +1,81 @@
+# This YAML file contains attacher & csi driver API objects that are necessary
+# to run external CSI attacher for nfs
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-stateful-rsdplugin
+  labels:
+    app: csi-stateful-rsdplugin
+spec:
+  selector:
+    app: csi-stateful-rsdplugin
+  ports:
+    - name: dummy
+      port: 12345
+
+---
+kind: StatefulSet
+apiVersion: apps/v1beta1
+metadata:
+  name: csi-stateful-rsdplugin
+spec:
+  serviceName: "csi-stateful"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: csi-stateful-rsdplugin
+    spec:
+      serviceAccount: csi-stateful
+      containers:
+        - name: csi-attacher
+          image: quay.io/k8scsi/csi-attacher:v0.3.0
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+            - "--connection-timeout=50s"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+
+        - name: csi-provisioner
+          args:
+            - "--v=5"
+          # - "--provisioner=kubernetes.io/host-path"
+            - "--provisioner=csi-rsdplugin"
+            - "--csi-address=$(ADDRESS)"
+            - "--connection-timeout=50s"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          image: quay.io/k8scsi/csi-provisioner:v0.3.1
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+
+        - name: rsd-driver
+          image: rsdplugin:0.1.0
+        # image: quay.io/k8scsi/hostpathplugin:v0.2.0
+          args :
+            - "--nodeid=$(NODE_ID)"
+            - "--endpoint=$(CSI_ENDPOINT)"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix://plugin/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /plugin
+      volumes:
+        - name: socket-dir
+          emptyDir:
