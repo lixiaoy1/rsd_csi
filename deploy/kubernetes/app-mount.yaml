@@ -1,0 +1,47 @@
+# app nginx
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-sc-rsdplugin
+#provisioner: kubernetes.io/host-path
+provisioner: csi-rsdplugin
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: csi-pvc-rsdplugin
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: csi-sc-rsdplugin
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-fsmode
+spec:
+  containers:
+  - image: gcr.io/google_containers/busybox:1.24
+    imagePullPolicy: IfNotPresent
+    name: test-fsmode
+    command:
+    - "/bin/sh"
+    args:
+    - "-c"
+    - "touch /mnt/SUCCESS && sleep 10000"
+    volumeMounts:
+      - mountPath: "/mnt"
+        name: csi-pv-rsdplugin
+  restartPolicy: "Never" 
+  volumes:
+  - name: csi-pv-rsdplugin
+    persistentVolumeClaim:
+      claimName: csi-pvc-rsdplugin
