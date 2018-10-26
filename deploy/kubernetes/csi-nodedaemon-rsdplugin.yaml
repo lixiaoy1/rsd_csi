@@ -33,8 +33,6 @@ spec:
           volumeMounts:
             - name: plugin-dir
               mountPath: /plugin
-            - name: registration-dir
-              mountPath: /registration
         - name: rsd-driver
           image: rsdplugin:0.1.0
         #  image: quay.io/k8scsi/hostpathplugin:v0.2.0
@@ -58,16 +56,23 @@ spec:
           volumeMounts:
             - name: plugin-dir
               mountPath: /plugin
-            - name: registration-dir
-              mountPath: /var/lib/kubelet/plugins
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet/pods
               mountPropagation: "Bidirectional"
+            - name: device-dir
+              mountPath: /dev
+              mountPropagation: "HostToContainer"
       volumes:
         - name: plugin-dir
           hostPath:
             path: /var/lib/kubelet/plugins/csi-rsdplugin
             type: DirectoryOrCreate
-        - name: registration-dir
+        - name: pods-mount-dir
           hostPath:
-            path: /var/lib/kubelet/plugins
+            path: /var/lib/kubelet/pods
+            type: Directory
+        - name: device-dir
+          hostPath:
+            path: /dev
             type: Directory
 

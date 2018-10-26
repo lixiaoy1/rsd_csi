@@ -4,6 +4,7 @@ import (
     "fmt"
     "os/exec"
     "strings"
+    "strconv"
     "github.com/golang/glog"
 )
 
@@ -22,6 +23,9 @@ func connectRSDVolume(initiator string, target string, target_ip string) (error)
 
 func getDevicePath(target string) (string){
     glog.Infof("getDevicePath from target: %s.", target)
+    if target == "" {
+       return ""
+    }
     cmd := exec.Command("nvme", "list")
     out, err := cmd.CombinedOutput()
     if err != nil {
@@ -59,5 +63,37 @@ func getDevicePath(target string) (string){
     }
 
     return ""
+}
+
+
+func getDevicePath2(target string) (string){
+    glog.Infof("getDevicePath2 from target: %s", target)
+    cmd := exec.Command("nvme", "list")
+    out, err := cmd.CombinedOutput()
+    if err != nil {
+        return ""
+    }
+
+    nvme_max := 0
+    nvme_list := string(out)
+    nvmes := strings.Split(nvme_list, "\n")
+    for i, n := range nvmes {
+        if i > 1 {
+            devicePath := strings.Split(n, " ")[0]
+            //fmt.Printf("%q\n", devicePath)
+            if devicePath == "" {
+                continue
+            }
+            nvme_no, err := strconv.Atoi(strings.Split(strings.Split(devicePath, "nvme")[1], "n")[0])
+            //fmt.Printf("__tingjie nvme_no: %d, nvme_max: %d", nvme_no, nvme_max)
+            if (err == nil) && (nvme_no > nvme_max) {
+                nvme_max = nvme_no
+            }
+        }
+    }
+
+    devicePathPlus := fmt.Sprintf("/dev/nvme%sn1", strconv.Itoa(nvme_max))
+    fmt.Printf("Returned devicePathPlus: %q\n", devicePathPlus)
+    return devicePathPlus
 }
 

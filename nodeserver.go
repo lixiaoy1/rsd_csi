@@ -39,19 +39,28 @@ type nodeServer struct {
 
 }
 
+
+var attachRequested = false
+var nvmeConnected = false
+
+var initiator = ""
+var target = ""
+var target_ip = ""
+
 func (ns *nodeServer) NodeGetId(ctx context.Context, req *csi.NodeGetIdRequest) (*csi.NodeGetIdResponse, error) {
-    glog.Infof("NodeGetId enter\n [Context]: %v,\n [Request]: %v.\n", ctx, *req)
+    glog.Errorf("NodeGetId enter\n [Context]: %v,\n [Request]: %v.\n", ctx, *req)
     return ns.DefaultNodeServer.NodeGetId(ctx, req)
 }
 
 func (ns *nodeServer) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
-    glog.Infof("NodeGetInfo enter\n [Context]: %v,\n [Request]: %v.\n", ctx, *req)
+    glog.Errorf("NodeGetInfo enter\n [Context]: %v,\n [Request]: %v.\n", ctx, *req)
     return ns.DefaultNodeServer.NodeGetInfo(ctx, req)
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
-	glog.Infof("NodePublishVolume enter\n [Context]: %v,\n [Request]: %v.\n", ctx, *req)
-	targetPath := req.GetTargetPath()
+	glog.Errorf("NodePublishVolume enter\n [Context]: %v,\n [Request]: %v.\n", ctx, *req)
+	//panic("NodePublishVolume Stack Trace:")
+        targetPath := req.GetTargetPath()
 	volName := req.GetVolumeId()
 
 	/*if !strings.HasPrefix(targetPath, "/mnt") {
@@ -83,21 +92,33 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
     }
 
     // Attach in storage
-    initiator, target, target_ip, err := rsdClient.AttachVolume("3", volName)
-    if err != nil {
-        glog.V(3).Infof("Failed to attach: %v", err)
-        return nil, err
+    if attachRequested == false {
+        glog.Infof("__tingjie AttachVolume RESTful request ...")
+        initiator, target, target_ip, err = rsdClient.AttachVolume("1", volName)
+        if err != nil {
+            glog.V(3).Infof("Failed to attach: %v", err)
+            return nil, err
+        }
+
+        glog.Infof("__tingjie AttachVolume RESTful request success! initiator:%s, target:%s, target_ip:%s", initiator, target, target_ip)
+        attachRequested = true
     }
 
     // nvme connect
-    err = connectRSDVolume(initiator, target, target_ip)
-    if err != nil {
-        glog.Errorf("Failed to find the device: %v", err)
-        return nil, err
+    if nvmeConnected == false {
+        glog.Infof("__tingjie connectRSDVolume CLI request ...")
+        err = connectRSDVolume(initiator, target, target_ip)
+        if err != nil {
+            glog.Errorf("Failed to find the device: %v", err)
+            return nil, err
+        }
+
+        glog.Infof("__tingjie connectRSDVolume CLI request success!")
+        nvmeConnected = true
     }
 
-    time.Sleep(3 * time.Second)
-    devicePath := getDevicePath(target)
+    time.Sleep(5 * time.Second)
+    devicePath := getDevicePath2(target)
     if devicePath == "" {
         glog.Errorf("Failed to getDevicePath")
         return nil, err
@@ -111,7 +132,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	attrib := req.GetVolumeAttributes()
 	mountFlags := req.GetVolumeCapability().GetMount().GetMountFlags()
 
-	glog.V(4).Infof("target %v\nfstype %v\ndevice %v\nreadonly %v\nattributes %v\n mountflags %v\n",
+	glog.Errorf("target %v\nfstype %v\ndevice %v\nreadonly %v\nattributes %v\n mountflags %v\n",
 		targetPath, fsType, devicePath, readOnly, attrib, mountFlags)
 
 	options := []string{}
@@ -149,7 +170,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
     }
 
     // Detach in storage
-    err = rsdClient.DetachVolume("3", volName)
+    err = rsdClient.DetachVolume("1", volName)
     if err != nil {
         glog.V(3).Infof("Failed to detach: %v", err)
         return nil, err

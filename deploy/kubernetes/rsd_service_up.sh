@@ -17,3 +17,4 @@ sleep 2
 # launch app nginx service
 echo "[UP] app-nginx ..."
 kubectl create -f ./app-nginx.yaml
+#kubectl create -f ./app-mount.yaml
