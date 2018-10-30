@@ -18,8 +18,8 @@ package rsd_csi
 
 import (
     "os"
-    "fmt"
-    "strings"
+//    "fmt"
+//    "strings"
     "time"
 
 	"github.com/golang/glog"
@@ -148,14 +148,16 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 }
 
 func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+	glog.Errorf("NodeUnpublishVolume enter\n [Context]: %v,\n [Request]: %v.\n", ctx, *req)
 	targetPath := req.GetTargetPath()
 
-	if !strings.HasPrefix(targetPath, "/mnt") {
+	/*if !strings.HasPrefix(targetPath, "/mnt") {
 		return nil, fmt.Errorf("rsd: malformed the value of target path: %s", targetPath)
 	}
 	s := strings.Split(strings.TrimSuffix(targetPath, "/mount"), "/")
-	volName := s[len(s)-1]
+	volName := s[len(s)-1]*/
 
+    volName := req.GetVolumeId()
     glog.V(4).Infof("unmount targetPath %v\n", targetPath)
     err := mount.New("").Unmount(req.GetTargetPath())
     if err != nil {

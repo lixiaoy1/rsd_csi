@@ -12,6 +12,9 @@ kubectl create -f ./csi-nodedaemon-rsdplugin.yaml
 sleep 1
 echo "[UP] csi-nodedaemon-rbac ..."
 kubectl create -f ./csi-nodedaemon-rbac.yaml
+sleep 1
+echo "[UP] csi-pv ..."
+kubectl create -f ./csi-pv.yaml
 sleep 2
 
 # launch app nginx service

@@ -1,28 +1,4 @@
 # app nginx
-
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: csi-sc-rsdplugin
-#provisioner: kubernetes.io/host-path
-provisioner: csi-rsdplugin
-reclaimPolicy: Delete
-volumeBindingMode: Immediate
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: csi-pvc-rsdplugin
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-  storageClassName: csi-sc-rsdplugin
-
----
 apiVersion: v1
 kind: Pod
 metadata:
